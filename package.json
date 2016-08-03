@@ -9,7 +9,7 @@
     "webpack-dev-server": "^1.14.1"
   },
   "scripts": {
-    "build": "webpack",
+    "build": "webpack --display-error-details",
     "watch": "webpack --watch",
     "start": "webpack-dev-server --hot --inline",
     "test:lint": "eslint . --ext .js --ignore-path .gitignore --cache; exit 0;"
