@@ -25,5 +25,8 @@
       "syntax-async-functions",
       "transform-async-to-generator"
     ]
+  },
+  "dependencies": {
+    "eventemitter3": "^1.2.0"
   }
 }

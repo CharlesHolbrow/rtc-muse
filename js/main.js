@@ -6,11 +6,41 @@ import 'babel-polyfill';
 // See "Importing modules from npm" in the article below
 // http://wesbos.com/javascript-modules/
 import 'webrtc-adapter';
+import EventEmitter from 'eventemitter3';
+window.EventEmitter = EventEmitter;
+
 
 import { RemoteVideo } from './RemoteVideo.js';
 window.videos = document.getElementById('videos');
 window.RemoteVideo = RemoteVideo;
-window.rm = new RemoteVideo(window.videos);
+const rm1 = window.rm1 = new RemoteVideo(window.videos);
+const rm2 = window.rm2 = new RemoteVideo(window.videos);
+
+rm1.emitter.on('localDescription', async (desc)=> {
+
+  // calling setLocalDescription should trigger local 
+  // onicecandidate. We must wait to setLocalDescription UNTIL
+  // after the offer/answer exchange. could this be done in
+  // the onnegotiationneeded callback?
+  rm1.pc.setLocalDescription(desc);
+  rm2.pc.setRemoteDescription(desc);
+
+  const answer = await rm2.pc.createAnswer();
+
+  console.log('got answer!!!!!', answer);
+  rm1.pc.setRemoteDescription(answer);
+  rm2.pc.setLocalDescription(answer);
+});
+
+rm1.onIceCandidate((rtcIceCandidate) => {
+  const candidate = new RTCIceCandidate(rtcIceCandidate);
+  rm2.pc.addIceCandidate(candidate);
+});
+
+rm2.onIceCandidate((rtcIceCandidate) => {
+  // const candidate = new RTCIceCandidate(rtcIceCandidate);
+  // rm1.pc.addIceCandidate(candidate);
+});
 
 var startButton = document.getElementById('startButton');
 var callButton = document.getElementById('callButton');
@@ -38,8 +68,8 @@ remoteVideo.addEventListener('loadedmetadata', function() {
 remoteVideo.onresize = function() {
   trace('Remote video size changed to ' +
     remoteVideo.videoWidth + 'x' + remoteVideo.videoHeight);
-  // We'll use the first onresize callback as an indication that video has started
-  // playing out.
+  // We'll use the first onresize callback as an indication that
+  // video has started playing out.
   if (startTime) {
     var elapsedTime = window.performance.now() - startTime;
     trace('Setup time: ' + elapsedTime.toFixed(3) + 'ms');
@@ -66,7 +96,8 @@ function getOtherPc(pc) {
 function gotStream(stream) {
   trace('Received local stream');
   localVideo.srcObject = stream;
-  // Add localStream to global scope so it's accessible from the browser console
+  // Add localStream to global scope so it's accessible from the
+  // browser console
   window.localStream = localStream = stream;
   callButton.disabled = false;
 }
@@ -173,7 +204,8 @@ function onSetSessionDescriptionError(error) {
 }
 
 function gotRemoteStream(e) {
-  // Add remoteStream to global scope so it's accessible from the browser console
+  // Add remoteStream to global scope so it's accessible from
+  // the browser console
   window.remoteStream = remoteVideo.srcObject = e.stream;
   trace('pc2 received remote stream');
 }
@@ -198,7 +230,7 @@ function onCreateAnswerSuccess(desc) {
 
 function onIceCandidate(pc, event) {
   if (event.candidate) {
-    getOtherPc(pc).addIceCandidate(
+      getOtherPc(pc).addIceCandidate(
       new RTCIceCandidate(event.candidate)
     ).then(
       function() {
