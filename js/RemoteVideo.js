@@ -47,7 +47,12 @@ export class RemoteVideo {
   createVideoElement() {
     if (this.videoElement)
       throw new Error('Already Has Video Element');
+
     this.videoElement = document.createElement('video');
+    // Setting autoplay = true is important. We can set the
+    // srcObject of the video element without playing the video,
+    // and in chrome we see the video, but the playback is very
+    // choppy unless it is playing.
     this.videoElement.autoplay = true;
     this.parentElement.appendChild(this.videoElement);
     this.videoElement.addEventListener('loadmetadata', function() {
