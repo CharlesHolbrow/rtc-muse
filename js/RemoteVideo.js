@@ -76,9 +76,26 @@ export class RemoteVideo {
     this.emitter.emit('localDescription', this.desc);
 
     // calling setLocalDescription should trigger local 
-    // onicecandidate. We must wait to setLocalDescription UNTIL
-    // after the offer/answer exchange. could this be done in
-    // the onnegotiationneeded callback?
+    // onicecandidate. We must not call addIceCandidate
+    // until AFTER the offer/answer exchange.
+    //
+    // For example, if the remote host calls addIceCandidate
+    // before she calls setLocalDescription, an error similar to
+    // the one below will be thrown:
+    //
+    // Failed to add Ice Candidate: Error processing ICE candidate
+    //
+    // It seems that is okay to call setLocalDescription
+    // (which emits the icecandidate events), and then
+    // immediately send the ice/candidates to the peer,
+    // because by the time the messages arrive at the peer,
+    // she will have already set her local and remote
+    // descriptions.
+    //
+    // Note that in one example HTML5 Rocks createOffer is called
+    // from the onnegotiationneeded event callback. I can't tell
+    // when this fires exactly. So I'm following the flow used in
+    // the google code lab example.
     this.pc.setLocalDescription(this.desc);
 
     // We successfully set the local description. Now we need to
