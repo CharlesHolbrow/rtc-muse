@@ -7,6 +7,11 @@ import 'babel-polyfill';
 // http://wesbos.com/javascript-modules/
 import 'webrtc-adapter';
 
+import { RemoteVideo } from './RemoteVideo.js';
+window.videos = document.getElementById('videos');
+window.RemoteVideo = RemoteVideo;
+window.rm = new RemoteVideo(window.videos);
+
 var startButton = document.getElementById('startButton');
 var callButton = document.getElementById('callButton');
 var hangupButton = document.getElementById('hangupButton');
