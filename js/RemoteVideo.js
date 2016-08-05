@@ -48,6 +48,7 @@ export class RemoteVideo {
     if (this.videoElement)
       throw new Error('Already Has Video Element');
     this.videoElement = document.createElement('video');
+    this.videoElement.autoplay = true;
     this.parentElement.appendChild(this.videoElement);
     this.videoElement.addEventListener('loadmetadata', function() {
       console.log(`loadmetadata ${this.videoWidth} x ${this.videoHeight}`, this);
