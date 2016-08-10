@@ -35,8 +35,8 @@ export class RemoteVideo {
     };
 
     this.pc.oniceconnectionstatechange = (event) => {
-      console.log('RemoteVideo:oniceconnectionstatechange', event);
-      this.emitter.emit('stateChange', event)
+      console.log('RemoteVideo:oniceconnectionstatechange', this.pc.iceConnectionState, event);
+      this.emitter.emit('stateChange', this.pc.iceConnectionState);
     };
 
     this.pc.onaddstream = (event) => {
