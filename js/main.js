@@ -16,7 +16,6 @@ window.RemoteVideo = RemoteVideo;
 
 import './signaling.js';
 
-
 window.videos = document.getElementById('videos');
 const rm1 = window.rm1 = new RemoteVideo(window.videos);
 const rm2 = window.rm2 = new RemoteVideo(window.videos);

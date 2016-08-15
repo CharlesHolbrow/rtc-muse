@@ -1,7 +1,7 @@
 const path        = require('path');
 const http        = require('http');
 const Koa         = require('koa');
-const mount       = require('koa-mount');
+const koaMount    = require('koa-mount');
 const koaStatic   = require('koa-static');
 const IO          = require('socket.io');
 
@@ -14,18 +14,25 @@ app.use(koaStatic('build'));
 
 
 // app.use BEFORE creating http server
-const server  = http.Server(app.callback());
-const io      = IO(server);
+const httpServer  = http.Server(app.callback());
+const sockServer  = IO(httpServer);
 
-io.on('join', ( socket ) => {
-  console.log( 'join event fired', data );
-});
-
-
-io.on('connection', (socket) => {
+sockServer.on('connection', (socket) => {
   console.log('connection socket:', Object.keys(socket));
   socket.emit('init', socket.id);
   socket.on('disconnect', () => { console.log('connection disconnect', socket.id); });
+
+  socket.on('join', (id) => {
+
+    if (typeof id !== 'string') {
+      socket.emit('malformed', 'argument must be a string');
+      console.log('bad join req. id:', id);
+      return;
+    }
+
+    console.log('join', id);
+
+  });
 });
 
-server.listen(process.env.PORT || 3000);
+httpServer.listen(process.env.PORT || 3000);
