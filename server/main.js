@@ -1,31 +1,31 @@
 const path        = require('path');
+const http        = require('http');
 const Koa         = require('koa');
-const IO          = require('koa-socket');
 const mount       = require('koa-mount');
 const koaStatic   = require('koa-static');
- 
+const IO          = require('socket.io');
+
 
 const app = new Koa();
-const io  = new IO();
 
  
 app.use(function *(next) { console.log(this.path);  yield next; });
 app.use(koaStatic('build'));
 
- 
-io.on('join', ( ctx, data ) => { 
+
+// app.use BEFORE creating http server
+const server  = http.Server(app.callback());
+const io      = IO(server);
+
+io.on('join', ( socket ) => {
   console.log( 'join event fired', data );
 });
 
 
-io.on('connection', function(ctx, data) {
-  console.log('connection ctx:', Object.keys(ctx));
-  console.log('connection data:', data);
-  console.log('connection socket:', Object.keys(ctx.socket));
-  ctx.socket.emit('init', data);
-  ctx.socket.on('disconnect', () => { console.log('connection disconnect', data); });
+io.on('connection', (socket) => {
+  console.log('connection socket:', Object.keys(socket));
+  socket.emit('init', socket.id);
+  socket.on('disconnect', () => { console.log('connection disconnect', socket.id); });
 });
 
-
-io.attach(app);
-app.listen(process.env.PORT || 3000);
+server.listen(process.env.PORT || 3000);
