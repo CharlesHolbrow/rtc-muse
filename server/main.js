@@ -3,22 +3,26 @@ const http        = require('http');
 const Koa         = require('koa');
 const koaMount    = require('koa-mount');
 const koaStatic   = require('koa-static');
+const koaRoute    = require('koa-route');
 const IO          = require('socket.io');
 
 
-const app = new Koa();
-
- 
-app.use(function *(next) { console.log(this.path);  yield next; });
-app.use(koaStatic('build'));
-
-
-// app.use BEFORE creating http server
+const app         = new Koa();
 const httpServer  = http.Server(app.callback());
 const sockServer  = IO(httpServer);
 
+
+app.use(koaRoute.post('/emit/:room/:event/:msg?', function*(room, event, msg) {
+  console.log('emit:', room, event, msg);
+  sockServer.in(room).emit(event, msg);
+  this.response.status = 202;
+}));
+
+
+app.use(koaStatic('build'));
+
 sockServer.on('connection', (socket) => {
-  console.log('connection socket:', Object.keys(socket));
+  console.log('connection socket:', socket.id);
   socket.emit('init', socket.id);
   socket.on('disconnect', () => { console.log('connection disconnect', socket.id); });
 
@@ -31,6 +35,8 @@ sockServer.on('connection', (socket) => {
     }
 
     console.log('join', id);
+    socket.join(id);
+    socket.emit('joined', id);
 
   });
 });
