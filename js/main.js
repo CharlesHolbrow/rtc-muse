@@ -14,7 +14,9 @@ import { RemoteVideo } from './RemoteVideo.js';
 window.RemoteVideo = RemoteVideo;
 
 
-import './signaling.js';
+import { socket } from './signaling.js';
+window.socket = socket;
+
 
 window.videos = document.getElementById('videos');
 const rm1 = window.rm1 = new RemoteVideo(window.videos);
@@ -53,8 +55,6 @@ var localVideo = document.getElementById('localVideo');
 
 
 var localStream;
-var pc1;
-var pc2;
 
 function gotStream(stream) {
   console.log('Received local stream');
@@ -81,10 +81,8 @@ function start() {
 
 function hangup() {
   console.log('Ending call');
-  pc1.close();
-  pc2.close();
-  pc1 = null;
-  pc2 = null;
+  rm1.pc.close();
+  rm2.pc.close();
 }
 
 
