@@ -9,18 +9,19 @@ import 'webrtc-adapter';
 import EventEmitter from 'eventemitter3';
 window.EventEmitter = EventEmitter;
 
-
 import { RemoteVideo } from './RemoteVideo.js';
 window.RemoteVideo = RemoteVideo;
 
-
 import { RtcMuseServerConnection } from './RtcMuseServerConnection.js';
-window.rtcMuse = new RtcMuseServerConnection();
+window.RtcMuseServerConnection = RtcMuseServerConnection;
+
+const rtcMuse = window.rtcMuse = new RtcMuseServerConnection(rm1);
+const videos = window.videos = document.getElementById('videos');
+
+const rm1 = window.rm1 = new RemoteVideo(rtcMuse, videos);
+const rm2 = window.rm2 = new RemoteVideo(rtcMuse, videos);
 
 
-window.videos = document.getElementById('videos');
-const rm1 = window.rm1 = new RemoteVideo(window.videos);
-const rm2 = window.rm2 = new RemoteVideo(window.videos);
 
 
 rm1.emitter.on('localDescription', async (desc)=> {

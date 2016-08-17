@@ -11,11 +11,13 @@ const offerOptions = {
 
 export class RemoteVideo {
 
-  constructor(parentElement) {
+  constructor(rtcMuse, parentElement) {
     if (!parentElement)
       throw new Error('RemoteVideo requires parentElement');
 
     this.parentElement    = parentElement;
+    this.rtcMuse          = rtcMuse;
+    this.socket           = rtcMuse.socket;
     this.videoElement     = null;
     this.stunTurnServers  = null;
     this.emitter          = new EventEmitter;
