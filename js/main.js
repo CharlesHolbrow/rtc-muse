@@ -14,13 +14,14 @@ import { RemoteVideo } from './RemoteVideo.js';
 window.RemoteVideo = RemoteVideo;
 
 
-import { socket } from './signaling.js';
-window.socket = socket;
+import { RtcMuseServerConnection } from './RtcMuseServerConnection.js';
+window.rtcMuse = new RtcMuseServerConnection();
 
 
 window.videos = document.getElementById('videos');
 const rm1 = window.rm1 = new RemoteVideo(window.videos);
 const rm2 = window.rm2 = new RemoteVideo(window.videos);
+
 
 rm1.emitter.on('localDescription', async (desc)=> {
 
