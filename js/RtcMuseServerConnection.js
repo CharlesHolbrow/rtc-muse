@@ -3,6 +3,10 @@ window.io = io;
 
 let instanceCount = 0;
 
+function randomId() {
+  return Math.random().toString(36).substr(2, 8);
+}
+
 export class RtcMuseServerConnection {
   constructor() {
 
@@ -14,7 +18,7 @@ export class RtcMuseServerConnection {
     const socket = io();
     this.socket = socket;
 
-    socket.on('beginTransaction', (data) => {
+    socket.on('beginOffer', (data) => {
       console.log('we may begin the transaction:', data);
     });
 
@@ -32,10 +36,15 @@ export class RtcMuseServerConnection {
 
     document.getElementById('connect-form').onsubmit = (event) => {
       event.preventDefault();
-      const peerId = document.getElementById('peerId').value;
-      if (peerId.lenght <= 8)
+      const answerPeerId = document.getElementById('peerId').value;
+      const requestId = randomId();
+      if (answerPeerId.length <= 8)
         throw new Error('Id not long enough');
-      socket.emit('requestTransaction', { peerId });
+
+      socket.emit('initiateIceTransaction', {
+        answerPeerId,
+        requestId,
+      });
     }
   }
 }

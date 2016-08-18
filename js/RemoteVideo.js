@@ -9,6 +9,7 @@ const offerOptions = {
 };
 
 
+// Rename this to send/receive video
 export class RemoteVideo {
 
   constructor(rtcMuse, parentElement) {
@@ -43,7 +44,7 @@ export class RemoteVideo {
 
     this.pc.onaddstream = (event) => {
       this.videoElement.srcObject = event.stream;
-    }
+    };
   }
 
   createVideoElement() {
@@ -107,6 +108,13 @@ export class RemoteVideo {
 
     // We successfully set the local description. Now we need to
     // send this.desc.sdp to the peer we want to connect to.
+    //
+    // To serialise, and de-serialize our description promised
+    // by the PeerConnection.createOffer call, we will pass a
+    // javascript object with the sdp property to a
+    // RTCSessionDescription constructor:
+    //
+    // new RTCSessionDescription({sdp:desc.sdp})
     return this.desc.sdp;
   }
 
@@ -118,6 +126,10 @@ export class RemoteVideo {
   // .sdpMLineIndex - integer. usually 1
   onIceCandidate(func) {
     this.emitter.on('iceCandidate', func);
+  }
+
+  onLocalDescription(func) {
+    this.emitter.on('localDescription', func);
   }
 
 }

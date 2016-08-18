@@ -22,6 +22,33 @@ const rm1 = window.rm1 = new RemoteVideo(rtcMuse, videos);
 const rm2 = window.rm2 = new RemoteVideo(rtcMuse, videos);
 
 
+rtcMuse.socket.on('beginOffer', async (data)=> {
+  const iceId = data.iceId;
+  const remote = new RemoteVideo(rtcMuse, videos);
+  remote.iceId = iceId;
+  remote.onIceCandidate((iceCandidate)=> {
+    window.iceCandidate = iceCandidate;
+    // this is essentially what we want on the other side:
+    // new RTCIceCandidate({candidate: iceCandidate.candidate})
+  });
+  remote.onLocalDescription((localDescription) => {
+    window.localDescription = localDescription;
+  });
+
+  // CAUTION: how do we ensure localStream exists?
+  const sdp = await remote.promiseSdpFromStream(localStream);
+  // because offerData has the .sdp property, our peer can pass
+  // it directly to an RTCSessionDescription constructor.
+  const offerData = { sdp, iceId };
+  rtcMuse.socket.emit('offer', offerData);
+  console.log('Offer sent to signaling server', iceId);
+});
+
+rtcMuse.socket.on('createAnswer', (data) => {
+  window.peerOfferData = data;
+  console.log(`createing answer for ${data.iceId}`);
+});
+
 
 
 rm1.emitter.on('localDescription', async (desc)=> {
@@ -65,7 +92,9 @@ function gotStream(stream) {
   // browser console
   window.localStream = localStream = stream;
   // callButton.disabled = false;
-  rm1.promiseSdpFromStream(localStream).then(() => {console.log('sdp!!!!', arguments)})
+  rm1.promiseSdpFromStream(localStream).then(() => {
+    console.log('sdp!!!!', arguments)
+  });
 }
 
 function start() {
