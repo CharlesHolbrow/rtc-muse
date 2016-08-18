@@ -19,7 +19,7 @@ export class RtcMuseServerConnection {
     this.socket = socket;
 
     socket.on('beginOffer', (data) => {
-      console.log('we may begin the transaction:', data);
+      console.log(`we may begin the transaction: ${data.iceId}`);
     });
 
     socket.on('malformed', (description) => { console.error(`malformed request: ${description}`); });

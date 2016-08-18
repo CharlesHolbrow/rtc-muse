@@ -1,3 +1,5 @@
+'use strict';
+
 const path        = require('path');
 const http        = require('http');
 const crypto      = require('crypto');
@@ -29,6 +31,8 @@ app.use(koaRoute.post('/emit/:room/:event/:msg?', function*(room, event, msg) {
 app.use(koaStatic('build'));
 
 
+
+
 // When a socket joins, register the event handlers on it.
 sockServer.on('connection', (socket) => {
 
@@ -41,6 +45,11 @@ sockServer.on('connection', (socket) => {
 
   console.log('current sockets:', Object.keys(socketsById));
   socket.emit('init', socket.id);
+
+
+  socket.on('log', (msg) => {
+    console.log(msg);
+  });
 
   // Clients may request to join a socket.io room
   socket.on('join', (id) => {
@@ -125,14 +134,77 @@ sockServer.on('connection', (socket) => {
     const peerSocket = transaction.answerSocket;
 
     // call the 'createAnswer' method on the peer who will respond
-    const answerPeerData = {
+    const dataForAnswerer = {
       iceId: data.iceId,
       sdp: data.sdp,
-    }
+      type: data.type,
+    };
 
-    peerSocket.emit('createAnswer', answerPeerData);
+    peerSocket.emit('createAnswer', dataForAnswerer);
   });
 
+
+  socket.on('answer', (data) => {
+
+    if (typeof data.iceId !== 'string') {
+      socket.emit('malformed', 'data.iceId must be a string');
+      return;
+    }
+
+    if (typeof data.sdp !== 'string') {
+      socket.emit('malformed', 'data.sdp must be a string');
+      return;
+    }
+
+    if (!iceTransactions.hasOwnProperty(data.iceId)) {
+      socket.emit('malformed', 'no transaction for iceId: ' + data.iceId);
+      return;
+    }
+
+    const transaction = iceTransactions[data.iceId];
+    const peerSocket = transaction.offerSocket;
+    const dataForOfferer = {
+      iceId: data.iceId,
+      sdp: data.sdp,
+      type: data.type,
+    };
+
+    peerSocket.emit('answer', dataForOfferer);
+  });
+
+
+  socket.on('iceCandidate', (data) => {
+
+    if (typeof data.iceId !== 'string') {
+      socket.emit('malformed', 'data.iceId must be a string');
+      return;
+    }
+
+    if (!iceTransactions.hasOwnProperty(data.iceId)) {
+      socket.emit('malformed', 'no transaction for iceId: ' + data.iceId);
+      return;
+    }
+
+    if (typeof data.candidate !== 'string') {
+      socket.emit('malformed', 'data.candidate must be a string');
+      return;
+    }
+
+    const transaction = iceTransactions[data.iceId];
+    let peerSocket;
+    if (transaction.offerSocket === socket)
+      peerSocket = transaction.answerSocket;
+    else if (transaction.answerSocket === socket)
+      peerSocket = transaction.offerSocket;
+    else {
+      socket.emit('malformed', 'failed to get peer socket')
+      return;
+    }
+
+    // forward entire contents of the package
+    peerSocket.emit('iceCandidate', data);
+
+  });
 
 });
 

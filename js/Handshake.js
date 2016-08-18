@@ -10,11 +10,11 @@ const offerOptions = {
 
 
 // Rename this to send/receive video
-export class RemoteVideo {
+export class Handshake {
 
-  constructor(rtcMuse, parentElement) {
+  constructor(rtcMuse, parentElement, iceId) {
     if (!parentElement)
-      throw new Error('RemoteVideo requires parentElement');
+      throw new Error('Handshake requires parentElement');
 
     this.parentElement    = parentElement;
     this.rtcMuse          = rtcMuse;
@@ -22,6 +22,7 @@ export class RemoteVideo {
     this.videoElement     = null;
     this.stunTurnServers  = null;
     this.emitter          = new EventEmitter;
+    this.iceId            = iceId;
 
     this.createVideoElement();
 
@@ -35,15 +36,19 @@ export class RemoteVideo {
       // contains a .candidate
       if (!event.candidate) return;
       this.emitter.emit('iceCandidate', event.candidate);
+      const data = event.candidate.toJSON();
+      data.iceId = this.iceId;
+      this.socket.emit('iceCandidate', data);
     };
 
     this.pc.oniceconnectionstatechange = (event) => {
-      console.log('RemoteVideo:oniceconnectionstatechange', this.pc.iceConnectionState, event);
+      console.log('Handshake:oniceconnectionstatechange', this.pc.iceConnectionState);
       this.emitter.emit('stateChange', this.pc.iceConnectionState);
     };
 
     this.pc.onaddstream = (event) => {
       this.videoElement.srcObject = event.stream;
+      console.log('add stream!');
     };
   }
 
@@ -63,19 +68,16 @@ export class RemoteVideo {
     });
   }
 
-  promiseSdpFromStream(stream) {
-    this.pc.addStream(stream);
-    return this.promiseSdpOffer();
-  }
+  async promiseDescriptionFromStream(stream) {
 
-  async promiseSdpOffer() {
+    this.pc.addStream(stream);
 
     // createOffer promises an RTCSessionDescription, which has:
     //
     // .type - 'offer'
     // .sdp  - string that we will send to peers
     this.desc  = await this.pc.createOffer(offerOptions);
-    console.log('create offer success', this.desc);
+    console.log('Created offer successfully');
 
     // Now we have a SDP description. This will be the 'local
     // description' for this.pc, and the remoteDescription for
@@ -115,7 +117,7 @@ export class RemoteVideo {
     // RTCSessionDescription constructor:
     //
     // new RTCSessionDescription({sdp:desc.sdp})
-    return this.desc.sdp;
+    return this.desc;
   }
 
   // register a callback. The argument to the callback will be
