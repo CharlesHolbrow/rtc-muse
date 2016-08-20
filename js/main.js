@@ -19,7 +19,7 @@ import io from 'socket.io-client';
 window.io = io;
 
 const socket  = new io();
-const muse = window.muse = new MuseServerConnection(socket);
+const muse    = window.muse = new MuseServerConnection(socket);
 const videos  = window.videos = document.getElementById('videos');
 
 

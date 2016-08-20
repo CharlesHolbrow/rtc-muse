@@ -56,7 +56,7 @@ export class Handshake {
 
     this.pc.onaddstream = (event) => {
       this.videoElement.srcObject = event.stream;
-      console.log('add stream!');
+      console.log('Added remote stream!');
     };
 
     // MDN suggest using ontrack instead of onaddstream
