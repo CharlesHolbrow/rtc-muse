@@ -105,7 +105,7 @@ sockServer.on('connection', (socket) => {
       requestId: data.requestId,
     };
 
-    socket.emit('beginOffer', offerPeerData);
+    socket.emit('createOffer', offerPeerData);
 
   });
 

@@ -12,17 +12,23 @@ const offerOptions = {
 // Rename this to send/receive video
 export class Handshake {
 
-  constructor(rtcMuse, parentElement, iceId) {
+  constructor(socket, parentElement, iceId) {
     if (!parentElement)
       throw new Error('Handshake requires parentElement');
 
     this.parentElement    = parentElement;
-    this.rtcMuse          = rtcMuse;
-    this.socket           = rtcMuse.socket;
+    this.socket           = socket;
     this.videoElement     = null;
     this.stunTurnServers  = null;
     this.emitter          = new EventEmitter;
     this.iceId            = iceId;
+
+    // We are going to save all the iceCandidates. This is not
+    // strictly necessary because we can add all the candidates
+    // to the peer connection as they are received. However
+    // storing them may help with debugging.
+    this.incomingIceCandidates = [];
+    this.outgoingIceCandidates = [];
 
     this.createVideoElement();
 
@@ -35,15 +41,17 @@ export class Handshake {
       // CAUTION: for now we are only emitting the event iff it
       // contains a .candidate
       if (!event.candidate) return;
+      this.outgoingIceCandidates.push(event.candidate);
       this.emitter.emit('iceCandidate', event.candidate);
       const data = event.candidate.toJSON();
       data.iceId = this.iceId;
       this.socket.emit('iceCandidate', data);
     };
 
-    this.pc.oniceconnectionstatechange = (event) => {
-      console.log('Handshake:oniceconnectionstatechange', this.pc.iceConnectionState);
-      this.emitter.emit('stateChange', this.pc.iceConnectionState);
+    this.pc.oniceconnectionstatechange = () => {
+      const state = this.pc.iceConnectionState;
+      console.log(`ICE connection state: ${state}`);
+      this.emitter.emit('stateChange', state);
     };
 
     this.pc.onaddstream = (event) => {
@@ -80,6 +88,7 @@ export class Handshake {
 
   async promiseDescriptionFromStream(stream) {
 
+    console.log('stream!~', stream);
     this.pc.addStream(stream);
 
     // createOffer promises an RTCSessionDescription, which has:
@@ -129,6 +138,20 @@ export class Handshake {
     // new RTCSessionDescription({sdp:desc.sdp})
     return this.desc;
   }
+
+
+  // Our remote peer will send us iceCandidates via the
+  // signaling server. When we receive them, pass them into this
+  // method.
+  addIceCandidateFromPeer(data) {
+    const iceCandidate = (data instanceof RTCIceCandidate)
+      ? data
+      : new RTCIceCandidate(data);
+
+    this.incomingIceCandidates.push(iceCandidate);
+    this.pc.addIceCandidate(iceCandidate);
+  }
+
 
   // register a callback. The argument to the callback will be
   // an RTCIceCandidate with:
