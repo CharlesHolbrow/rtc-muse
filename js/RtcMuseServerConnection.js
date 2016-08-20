@@ -1,21 +1,29 @@
 import io from 'socket.io-client';
-window.io = io;
 
+// Until I decide to move to a full front-end framework
+// I enforce a single instance of this class
 let instanceCount = 0;
+
 
 function randomId() {
   return Math.random().toString(36).substr(2, 8);
 }
 
+
 export class RtcMuseServerConnection {
-  constructor() {
+  constructor(socket) {
+
+    // note that even though can can construct a socket by
+    // calling 'new io()', the value returned will be an
+    // instance of io.Socket
+    if (!(socket instanceof io.Socket))
+      throw new Error('RtcMuseServerConnection requires a socket instance')
 
     // Until I decide to move to a full front-end framework
     // I enforce a single instance of this class
     if (++instanceCount > 1)
       throw new Error('Only one instance of RtcMuseServerConnection is allowed');
 
-    const socket = io();
     this.socket = socket;
 
     socket.on('beginOffer', (data) => {

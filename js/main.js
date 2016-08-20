@@ -15,8 +15,12 @@ window.Handshake = Handshake;
 import { RtcMuseServerConnection } from './RtcMuseServerConnection.js';
 window.RtcMuseServerConnection = RtcMuseServerConnection;
 
-const rtcMuse = window.rtcMuse = new RtcMuseServerConnection();
-const videos = window.videos = document.getElementById('videos');
+import io from 'socket.io-client';
+window.io = io;
+
+const socket  = new io();
+const rtcMuse = window.rtcMuse = new RtcMuseServerConnection(socket);
+const videos  = window.videos = document.getElementById('videos');
 
 const handshakeByIceId = window.handshakeByIceId = {};
 
