@@ -50,6 +50,16 @@ export class Handshake {
       this.videoElement.srcObject = event.stream;
       console.log('add stream!');
     };
+
+    // MDN suggest using ontrack instead of onaddstream
+    this.pc.ontrack = (event) => {
+      console.log(`ontrack with ${event.streams.length} streams`);
+      const streams = event.streams;
+      // streams is an array of MediaStream objects
+      // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream
+      // a stream contains zero or more audio and video tracks
+      window.streams = streams;
+    };
   }
 
   createVideoElement() {
