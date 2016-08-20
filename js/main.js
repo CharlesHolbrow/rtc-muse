@@ -52,7 +52,7 @@ document.getElementById('connect-form').onsubmit = async (event) => {
   if (answerPeerId.length <= 8)
     throw new Error('Id not long enough');
 
-  const result = await muse.promiseHandshake(answerPeerId);
+  const result = await muse.initiateIceTransaction(answerPeerId);
   console.log('promise result:', result);
 }
 

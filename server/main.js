@@ -78,14 +78,12 @@ sockServer.on('connection', (socket) => {
     if (typeof data.answerPeerId !== 'string') {
       const reason =  'data.answerPeerId must be a string';
       socket.emit('malformed', reason);
-      socket.emit('fail', { reason, requestId: data.requestId });
       return;
     }
 
     if (!socketsById.hasOwnProperty(data.answerPeerId)) {
       const reason = `could not find a peer with id: ${data.answerPeerId}`
       socket.emit('malformed', reason);
-      socket.emit('fail', { reason, requestId: data.requestId });
       return;
     }
 
