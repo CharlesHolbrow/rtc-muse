@@ -47,7 +47,7 @@ export class MuseServerConnection {
       const videos    = document.getElementById('videos');
 
       const iceId     = data.iceId;
-      const handshake = new Handshake(socket, videos, data.iceId);
+      const handshake = new Handshake(socket, data.iceId);
       handshake.onRemoteStream((stream) => {
         this.emitter.emit('remoteStream', stream);
       })
@@ -75,7 +75,7 @@ export class MuseServerConnection {
     socket.on('createAnswer', async (data) => {
 
       const videos = document.getElementById('videos');
-      const handshake = new Handshake(socket, videos, data.iceId);
+      const handshake = new Handshake(socket, data.iceId);
       handshake.onRemoteStream((stream) => {
         this.emitter.emit('remoteStream', stream);
       })

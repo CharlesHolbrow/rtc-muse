@@ -11,13 +11,11 @@ const offerOptions = {
 
 export class Handshake {
 
-  constructor(socket, parentElement, iceId) {
-    if (!parentElement)
-      throw new Error('Handshake requires parentElement');
+  constructor(socket, iceId) {
+    if (typeof iceId !== 'string')
+      throw new Error('Handshake requires an iceId');
 
-    this.parentElement    = parentElement;
     this.socket           = socket;
-    this.videoElement     = null;
     this.stunTurnServers  = null;
     this.emitter          = new EventEmitter;
     this.iceId            = iceId;
@@ -28,8 +26,6 @@ export class Handshake {
     // storing them may help with debugging.
     this.incomingIceCandidates = [];
     this.outgoingIceCandidates = [];
-
-    this.createVideoElement();
 
     this.pc = new RTCPeerConnection(this.stunTurnServers);
     this.pc.onicecandidate = (event) => {
@@ -53,11 +49,6 @@ export class Handshake {
       this.emitter.emit('stateChange', state);
     };
 
-    this.pc.onaddstream = (event) => {
-      this.videoElement.srcObject = event.stream;
-      console.log('Added remote stream!');
-    };
-
     // MDN suggest using ontrack instead of onaddstream
     this.pc.ontrack = (event) => {
       console.log(`ontrack with ${event.streams.length} streams`);
@@ -75,22 +66,6 @@ export class Handshake {
         this.emitter.emit('remoteStream', stream);
       }
     };
-  }
-
-  createVideoElement() {
-    if (this.videoElement)
-      throw new Error('Already Has Video Element');
-
-    this.videoElement = document.createElement('video');
-    // Setting autoplay = true is important. We can set the
-    // srcObject of the video element without playing the video,
-    // and in chrome we see the video, but the playback is very
-    // choppy unless it is playing.
-    this.videoElement.autoplay = true;
-    this.parentElement.appendChild(this.videoElement);
-    this.videoElement.addEventListener('loadmetadata', function() {
-      console.log(`loadmetadata ${this.videoWidth} x ${this.videoHeight}`, this);
-    });
   }
 
   async promiseDescriptionFromStream(stream) {
