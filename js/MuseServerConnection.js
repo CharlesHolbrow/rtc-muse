@@ -43,9 +43,6 @@ export class MuseServerConnection {
     socket.on('createOffer', async (data) => {
       console.log(`we may begin the transaction: ${data.iceId}`);
 
-      // CAUTION: how do we actually want to do this?
-      const videos    = document.getElementById('videos');
-
       const iceId     = data.iceId;
       const handshake = new Handshake(socket, data.iceId);
       handshake.onRemoteStream((stream) => {
@@ -74,7 +71,6 @@ export class MuseServerConnection {
     // The server asked us to create an answer, and send it back
     socket.on('createAnswer', async (data) => {
 
-      const videos = document.getElementById('videos');
       const handshake = new Handshake(socket, data.iceId);
       handshake.onRemoteStream((stream) => {
         this.emitter.emit('remoteStream', stream);

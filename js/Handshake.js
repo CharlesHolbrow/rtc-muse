@@ -70,7 +70,6 @@ export class Handshake {
 
   async promiseDescriptionFromStream(stream) {
 
-    console.log('stream!~', stream);
     this.pc.addStream(stream);
 
     // createOffer promises an RTCSessionDescription, which has:
@@ -134,6 +133,10 @@ export class Handshake {
     this.pc.addIceCandidate(iceCandidate);
   }
 
+
+  close() {
+    this.pc.close();
+  }
 
   // register a callback. The argument to the callback will be
   // an RTCIceCandidate with:
