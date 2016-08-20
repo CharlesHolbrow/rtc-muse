@@ -46,10 +46,7 @@ sockServer.on('connection', (socket) => {
   console.log('current sockets:', Object.keys(socketsById));
   socket.emit('init', socket.id);
 
-
-  socket.on('log', (msg) => {
-    console.log(msg);
-  });
+  socket.on('log', (msg) => { console.log(msg); });
 
   // Clients may request to join a socket.io room
   socket.on('join', (id) => {
@@ -73,18 +70,22 @@ sockServer.on('connection', (socket) => {
   // client must include the iceId sending iceCandidates and webRtc offer
   socket.on('initiateIceTransaction', (data) => {
 
-    if (typeof data.answerPeerId !== 'string') {
-      socket.emit('malformed', 'data.answerPeerId must be a string');
-      return;
-    }
-
     if (typeof data.requestId !== 'string') {
       socket.emit('malformed', 'data.requestId must be a string');
       return;
     }
 
+    if (typeof data.answerPeerId !== 'string') {
+      const reason =  'data.answerPeerId must be a string';
+      socket.emit('malformed', reason);
+      socket.emit('fail', { reason, requestId: data.requestId });
+      return;
+    }
+
     if (!socketsById.hasOwnProperty(data.answerPeerId)) {
-      socket.emit('malformed', 'could not find a peer with id: ' + data.answerPeerId);
+      const reason = `could not find a peer with id: ${data.answerPeerId}`
+      socket.emit('malformed', reason);
+      socket.emit('fail', { reason, requestId: data.requestId });
       return;
     }
 

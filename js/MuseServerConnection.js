@@ -29,6 +29,7 @@ export class MuseServerConnection {
 
     this.emitter    = new EventEmitter();
     this.handshakes = {};
+    this.promises   = {};
     this.socket     = socket;
 
     socket.on('joined', (id) => { console.log(`joined: ${id}`); });
@@ -41,6 +42,10 @@ export class MuseServerConnection {
     // The server asked us to make a peer connection, call
     // .createOffer, and send that offer back to the server
     socket.on('createOffer', async (data) => {
+
+      if (!this.promises.hasOwnProperty(data.requestId))
+        console.warn('received createOffer request without valid requestId');
+
       console.log(`we may begin the transaction: ${data.iceId}`);
 
       const iceId     = data.iceId;
@@ -52,6 +57,11 @@ export class MuseServerConnection {
 
       // we keep track of all the handshakes on this socket
       this.handshakes[iceId]  = handshake;
+
+      if (this.promises[data.requestId]) {
+        this.promises[data.requestId].resolve(handshake);
+        delete this.promises[data.requestId];
+      }
 
       // CAUTION: how do we ensure localStream exists?
       const desc = await handshake.promiseDescriptionFromStream(window.localStream);
@@ -113,6 +123,11 @@ export class MuseServerConnection {
       handshake.addIceCandidateFromPeer(data);
     });
 
+    socket.on('fail', (data) => {
+      if (!this.promises.hasOwnProperty(data.requestId))
+        console.warn('received fail event without valid requestId');
+      this.promises[data.requestId].reject(data);
+    });
 
     // Currently constructing more than one instance of this
     // class will cause bugs due to the interaction with hard
@@ -121,19 +136,26 @@ export class MuseServerConnection {
     socket.on('init', (id) => {
       document.getElementById('socket-id').innerHTML = id;
     });
+  }
 
-    document.getElementById('connect-form').onsubmit = (event) => {
-      event.preventDefault();
-      const answerPeerId = document.getElementById('peerId').value;
-      const requestId = randomId();
-      if (answerPeerId.length <= 8)
-        throw new Error('Id not long enough');
+  promiseHandshake(answerPeerId) {
 
-      socket.emit('initiateIceTransaction', {
-        answerPeerId,
-        requestId,
-      });
-    }
+    if (typeof answerPeerId !== 'string')
+      throw new Error('promiseHandshake requires a answerPeerId');
+
+    const requestId = randomId();
+    const promise = new Promise((resolve, reject) => {
+      this.promises[requestId] = { resolve, reject };
+    });
+
+    // The server must answer this method with 'createOffer' or
+    // 'fail'. The answer must include the requestId
+    this.socket.emit('initiateIceTransaction', {
+      requestId,
+      answerPeerId,
+    });
+
+    return promise;
   }
 
   onRemoteStream(func) {

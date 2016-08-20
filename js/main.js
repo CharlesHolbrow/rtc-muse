@@ -46,6 +46,17 @@ window.v1 = createVideoElement();
 muse.onRemoteStream((stream) => { window.v1.srcObject = stream; });
 
 
+document.getElementById('connect-form').onsubmit = async (event) => {
+  event.preventDefault();
+  const answerPeerId = document.getElementById('peerId').value;
+  if (answerPeerId.length <= 8)
+    throw new Error('Id not long enough');
+
+  const result = await muse.promiseHandshake(answerPeerId);
+  console.log('promise result:', result);
+}
+
+
 var localStream;
 
 function gotStream(stream) {
