@@ -41,15 +41,16 @@ export class MuseServerConnection {
     // The server asked us to make a peer connection, call
     // .createOffer, and send that offer back to the server
     socket.on('createOffer', async (data) => {
-      console.log(`we may begin the transaction: ${data.iceId}`);
+      const iceId = data.iceId;
+      console.log(`We may begin the transaction: ${iceId}`);
 
-      const iceId     = data.iceId;
       const handshake = this.createHandshake(iceId);
+      this.emitter.emit('offerHandshake', handshake);
 
-      // CAUTION: how do we ensure localStream exists?
-      const desc = await handshake.promiseDescriptionFromStream(window.localStream);
+      console.log(`Waiting for stream and description: ${iceId}`);
+      const desc = await handshake.promiseDescription();
       const offerData = desc.toJSON();
-      offerData.iceId = iceId
+      offerData.iceId = iceId;
 
       // offerData should now have the following properties:
       // .type .sdp .iceId
@@ -63,6 +64,7 @@ export class MuseServerConnection {
     socket.on('createAnswer', async (data) => {
 
       const handshake = this.createHandshake(data.iceId);
+      this.emitter.emit('answerHandshake', handshake);
 
       const remoteDesc = new RTCSessionDescription(data);
       handshake.pc.setRemoteDescription(remoteDesc);
@@ -120,6 +122,8 @@ export class MuseServerConnection {
     return handshake;
   }
 
+  // Calling initiateIceTransaction should trigger an
+  // offerHandshake and a handshake event from this.emitter.
   initiateIceTransaction(answerPeerId) {
 
     if (typeof answerPeerId !== 'string')
@@ -139,7 +143,15 @@ export class MuseServerConnection {
     this.emitter.on('remoteStream', func);
   }
 
-  onHandshake() {
+  onHandshake(func) {
     this.emitter.on('handshake', func);
+  }
+
+  onOfferHandshake(func) {
+    this.emitter.on('offerHandshake', func);
+  }
+
+  onAnswerHandshake(func) {
+    this.emitter.on('answerHandshake', func)
   }
 }

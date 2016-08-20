@@ -23,11 +23,6 @@ const muse    = window.muse = new MuseServerConnection(socket);
 const videos  = window.videos = document.getElementById('videos');
 
 
-var localVideo = document.getElementById('localVideo');
-var startButton = document.getElementById('startButton');
-startButton.onclick = start;
-
-
 function createVideoElement() {
   const videoElement = document.createElement('video');
   // Setting autoplay = true is important. We can set the
@@ -49,35 +44,32 @@ muse.onRemoteStream((stream) => { window.v1.srcObject = stream; });
 document.getElementById('connect-form').onsubmit = async (event) => {
   event.preventDefault();
   const answerPeerId = document.getElementById('peerId').value;
+
+  // Sanity check the peerId
   if (answerPeerId.length <= 8)
     throw new Error('Id not long enough');
 
-  const result = await muse.initiateIceTransaction(answerPeerId);
-  console.log('promise result:', result);
+  muse.initiateIceTransaction(answerPeerId);
 }
 
 
-var localStream;
+const startButton = document.getElementById('startButton');
 
-function gotStream(stream) {
-  console.log('Received local stream');
-  localVideo.srcObject = stream;
-  // Add localStream to global scope so it's accessible from the
-  // browser console
-  window.localStream = localStream = stream;
-
-}
-
-function start() {
-  console.log('Requesting local stream');
+startButton.onclick = async function() {
+  console.log('Requesting local stream with getUserMedia');
   startButton.disabled = true;
-  navigator.mediaDevices.getUserMedia({
+  const stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
     video: true
-  })
-  .then(gotStream)
-  .catch(function(e) {
-    alert('getUserMedia() error: ' + e.name);
   });
+
+  console.log('Received local stream from getUserMedia');
+  document.getElementById('localVideo').srcObject = stream;
+  // Add localStream to global scope so it's accessible from the
+  // browser console
+  window.localStream = stream;
 }
 
+muse.onOfferHandshake((handshake) => {
+  handshake.addStream(window.localStream);
+});

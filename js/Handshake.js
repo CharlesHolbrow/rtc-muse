@@ -19,6 +19,7 @@ export class Handshake {
     this.stunTurnServers  = null;
     this.emitter          = new EventEmitter;
     this.iceId            = iceId;
+    this.stream           = null;
 
     // We are going to save all the iceCandidates. This is not
     // strictly necessary because we can add all the candidates
@@ -68,9 +69,10 @@ export class Handshake {
     };
   }
 
-  async promiseDescriptionFromStream(stream) {
+  async promiseDescription() {
 
-    this.pc.addStream(stream);
+    // we cannot createOffer until we have a stream;
+    await this.promiseStream();
 
     // createOffer promises an RTCSessionDescription, which has:
     //
@@ -131,6 +133,28 @@ export class Handshake {
 
     this.incomingIceCandidates.push(iceCandidate);
     this.pc.addIceCandidate(iceCandidate);
+  }
+
+  promiseStream() {
+    return new Promise((resolve) => {
+      if (this.stream) {
+        resolve(this.stream);
+        return;
+      }
+      this.emitter.on('stream', (stream)=> {
+        resolve(stream);
+      });
+    });
+  }
+
+  addStream(stream) {
+    if (this.stream)
+      throw new Error('handshake already has a stream');
+    if (!stream)
+      throw new Error('No stream provided to addStream method');
+    this.pc.addStream(stream);
+    this.stream = stream;
+    this.emitter.emit('stream', stream);
   }
 
 
