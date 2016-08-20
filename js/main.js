@@ -28,6 +28,24 @@ var startButton = document.getElementById('startButton');
 startButton.onclick = start;
 
 
+function createVideoElement() {
+  const videoElement = document.createElement('video');
+  // Setting autoplay = true is important. We can set the
+  // srcObject of the video element without playing the video,
+  // and in chrome we see the video, but the playback is very
+  // choppy unless it is playing.
+  videoElement.autoplay = true;
+  videoElement.addEventListener('loadmetadata', function() {
+    console.log(`loadmetadata ${this.videoWidth} x ${this.videoHeight}`, this);
+  });
+  videos.appendChild(videoElement);
+  return videoElement;
+}
+
+window.v1 = createVideoElement();
+muse.onRemoteStream((stream) => { window.v1.srcObject = stream; });
+
+
 var localStream;
 
 function gotStream(stream) {

@@ -9,7 +9,6 @@ const offerOptions = {
 };
 
 
-// Rename this to send/receive video
 export class Handshake {
 
   constructor(socket, parentElement, iceId) {
@@ -62,11 +61,19 @@ export class Handshake {
     // MDN suggest using ontrack instead of onaddstream
     this.pc.ontrack = (event) => {
       console.log(`ontrack with ${event.streams.length} streams`);
-      const streams = event.streams;
       // streams is an array of MediaStream objects
       // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream
       // a stream contains zero or more audio and video tracks
-      window.streams = streams;
+      //
+      // To play a stream via a HTML DOM video element, set:
+      //
+      // videoElement.srcObject = stream
+      //
+      // If video element does not have the must have .autoplay
+      // attribute, we must call .play() manually
+      for (const stream of event.streams) {
+        this.emitter.emit('remoteStream', stream);
+      }
     };
   }
 
@@ -165,6 +172,10 @@ export class Handshake {
 
   onLocalDescription(func) {
     this.emitter.on('localDescription', func);
+  }
+
+  onRemoteStream(func) {
+    this.emitter.on('remoteStream', func);
   }
 
 }

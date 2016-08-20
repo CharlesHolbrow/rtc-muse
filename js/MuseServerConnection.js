@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 
+import EventEmitter from 'eventemitter3';
 import { Handshake } from './Handshake.js';
 
 // Until I decide to move to a full front-end framework
@@ -26,12 +27,15 @@ export class MuseServerConnection {
     if (++instanceCount > 1)
       throw new Error('Only one instance of RtcMuseServerConnection is allowed');
 
+    this.emitter    = new EventEmitter();
     this.handshakes = {};
-    this.socket = socket;
+    this.socket     = socket;
 
-    socket.on('malformed', (description) => { console.error(`malformed request: ${description}`); });
     socket.on('joined', (id) => { console.log(`joined: ${id}`); });
     socket.on('log', (text) => { console.log(text); });
+    socket.on('malformed', (description) => {
+      console.error(`malformed request: ${description}`);
+    });
 
 
     // The server asked us to make a peer connection, call
@@ -44,6 +48,9 @@ export class MuseServerConnection {
 
       const iceId     = data.iceId;
       const handshake = new Handshake(socket, videos, data.iceId);
+      handshake.onRemoteStream((stream) => {
+        this.emitter.emit('remoteStream', stream);
+      })
       handshake.iceId = iceId;
 
       // we keep track of all the handshakes on this socket
@@ -69,6 +76,9 @@ export class MuseServerConnection {
 
       const videos = document.getElementById('videos');
       const handshake = new Handshake(socket, videos, data.iceId);
+      handshake.onRemoteStream((stream) => {
+        this.emitter.emit('remoteStream', stream);
+      })
 
       this.handshakes[data.iceId] = handshake;
 
@@ -128,5 +138,9 @@ export class MuseServerConnection {
         requestId,
       });
     }
+  }
+
+  onRemoteStream(func) {
+    this.emitter.on('remoteStream', func);
   }
 }
