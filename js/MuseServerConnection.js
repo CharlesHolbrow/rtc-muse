@@ -49,14 +49,7 @@ export class MuseServerConnection {
       console.log(`we may begin the transaction: ${data.iceId}`);
 
       const iceId     = data.iceId;
-      const handshake = new Handshake(socket, data.iceId);
-      handshake.onRemoteStream((stream) => {
-        this.emitter.emit('remoteStream', stream);
-      })
-      handshake.iceId = iceId;
-
-      // we keep track of all the handshakes on this socket
-      this.handshakes[iceId]  = handshake;
+      const handshake = this.createHandshake(iceId);
 
       if (this.promises[data.requestId]) {
         this.promises[data.requestId].resolve(handshake);
@@ -65,8 +58,6 @@ export class MuseServerConnection {
 
       // CAUTION: how do we ensure localStream exists?
       const desc = await handshake.promiseDescriptionFromStream(window.localStream);
-      // because offerData has the .sdp property, our peer can pass
-      // it directly to an RTCSessionDescription constructor.
       const offerData = desc.toJSON();
       offerData.iceId = iceId
 
@@ -81,12 +72,7 @@ export class MuseServerConnection {
     // The server asked us to create an answer, and send it back
     socket.on('createAnswer', async (data) => {
 
-      const handshake = new Handshake(socket, data.iceId);
-      handshake.onRemoteStream((stream) => {
-        this.emitter.emit('remoteStream', stream);
-      })
-
-      this.handshakes[data.iceId] = handshake;
+      const handshake = this.createHandshake(data.iceId);
 
       const remoteDesc = new RTCSessionDescription(data);
       handshake.pc.setRemoteDescription(remoteDesc);
@@ -138,6 +124,18 @@ export class MuseServerConnection {
     });
   }
 
+  createHandshake(iceId) {
+    const handshake = new Handshake(this.socket, iceId);
+    handshake.onRemoteStream((stream) => {
+      this.emitter.emit('remoteStream', stream);
+    })
+
+    // Store all the handshakes on this socket
+    this.handshakes[iceId]  = handshake;
+    this.emitter.emit('handshake', handshake);
+    return handshake;
+  }
+
   promiseHandshake(answerPeerId) {
 
     if (typeof answerPeerId !== 'string')
@@ -160,5 +158,9 @@ export class MuseServerConnection {
 
   onRemoteStream(func) {
     this.emitter.on('remoteStream', func);
+  }
+
+  onHandshake() {
+    this.emitter.on('handshake', func);
   }
 }
