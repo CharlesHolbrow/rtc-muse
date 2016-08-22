@@ -180,4 +180,7 @@ export class Handshake {
     this.emitter.on('remoteStream', func);
   }
 
+  onStateChange(func) {
+    this.emitter.on('stateChange', func);
+  }
 }

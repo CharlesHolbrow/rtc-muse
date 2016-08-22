@@ -45,7 +45,7 @@ export class MuseServerConnection {
       console.log(`We may begin the transaction: ${iceId}`);
 
       const handshake = this.createHandshake(iceId);
-      this.emitter.emit('offerHandshake', handshake);
+      this.emitter.emit('offerHandshake', handshake, iceId);
 
       console.log(`Waiting for stream and description: ${iceId}`);
       const desc = await handshake.promiseDescription();
@@ -64,7 +64,7 @@ export class MuseServerConnection {
     socket.on('createAnswer', async (data) => {
 
       const handshake = this.createHandshake(data.iceId);
-      this.emitter.emit('answerHandshake', handshake);
+      this.emitter.emit('answerHandshake', handshake, data.iceId);
 
       const remoteDesc = new RTCSessionDescription(data);
       handshake.pc.setRemoteDescription(remoteDesc);
@@ -112,13 +112,14 @@ export class MuseServerConnection {
 
   createHandshake(iceId) {
     const handshake = new Handshake(this.socket, iceId);
-    handshake.onRemoteStream((stream) => {
-      this.emitter.emit('remoteStream', stream);
-    })
-
     // Store all the handshakes on this socket
     this.handshakes[iceId]  = handshake;
-    this.emitter.emit('handshake', handshake);
+
+    handshake.onRemoteStream((stream) => {
+      this.emitter.emit('remoteStream', stream, iceId);
+    })
+
+    this.emitter.emit('handshake', handshake, iceId);
     return handshake;
   }
 

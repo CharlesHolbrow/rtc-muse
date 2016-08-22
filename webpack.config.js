@@ -10,10 +10,13 @@ var dir_html = path.resolve(__dirname, 'html');
 var dir_build = path.resolve(__dirname, 'build');
 
 module.exports = {
-  entry: path.resolve(dir_js, 'main.js'),
+  entry: {
+    'single': path.resolve(dir_js, 'main-single.js'),
+    'hub': path.resolve(dir_js, 'main-hub.js'),
+  },
   output: {
     path: dir_build,
-    filename: 'bundle.js'
+    filename: 'bundle-[name].js'
   },
   devServer: {
     contentBase: dir_build,
